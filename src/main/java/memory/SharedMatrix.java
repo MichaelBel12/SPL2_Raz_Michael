@@ -70,17 +70,29 @@ public class SharedMatrix {
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {
         // TODO: acquire read lock for each vector
+        for(int i=0;i<vecs.length;i++){
+            vecs[i].readLock();
+        }
     }
 
     private void releaseAllVectorReadLocks(SharedVector[] vecs) {
         // TODO: release read locks
+        for(int i=0;i<vecs.length;i++){
+            vecs[i].readUnlock();
+        }
     }
 
     private void acquireAllVectorWriteLocks(SharedVector[] vecs) {
         // TODO: acquire write lock for each vector
+        for(int i=0;i<vecs.length;i++){
+            vecs[i].writeLock();
+        }
     }
 
     private void releaseAllVectorWriteLocks(SharedVector[] vecs) {
-        // TODO: release write locks
+        // TODO: release write lock for each vector
+        for(int i=0;i<vecs.length;i++){
+            vecs[i].writeUnlock();
+        }
     }
 }
