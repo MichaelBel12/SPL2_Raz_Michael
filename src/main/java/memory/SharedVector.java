@@ -2,6 +2,8 @@ package memory;
 
 import java.util.concurrent.locks.ReadWriteLock;
 
+import javax.management.RuntimeErrorException;
+
 public class SharedVector {
 
     private double[] vector;
@@ -69,14 +71,14 @@ public class SharedVector {
         
     }
 
-    public void add(SharedVector other) {
-        if (this==other){
+    public void add(SharedVector other) {              //Note: Might cause deadlock if a+b and b+a are executed at the same time, yet-
+        if (this==other){                             //This situation wont happen in LAE implementation
             writeLock();
              for(int i=0;i<vector.length;i++){                
                 vector[i] = vector[i]*2;
             }
             writeUnlock();
-            return;
+            return;                                 
         }  
         if(vector.length!=other.vector.length)
             throw new IllegalArgumentException("[Add]: Cannot add vectors with diferent sizes"); 
@@ -84,7 +86,7 @@ public class SharedVector {
         writeLock();
         try{
             if(orientation!=other.orientation)
-                throw new IllegalArgumentException("[Add]: Cannot add vectors with diferent orientations");
+                throw new IllegalArgumentException("[Add]: Cannot add vectors with different orientations");
             for(int i=0;i<vector.length;i++){
                 vector[i] = vector[i]+ other.vector[i];
             }
@@ -96,15 +98,77 @@ public class SharedVector {
     } 
 
     public void negate() {
-        // TODO: negate vector
+        writeLock();
+        for(int i=0;i<vector.length;i++){
+            vector[i]= -1*vector[i];
+        }
+        writeUnlock();
     }
 
-    public double dot(SharedVector other) {
-        // TODO: compute dot product (row · column)
-        return 0;
-    }
+    public double dot(SharedVector other) {  //Note: Might cause deadlock if a*b and b+a are executed at the same time, yet-
+        double result=0;                        //This situation wont happen in LAE implementation
+        if (this==other){                            
+          throw new IllegalArgumentException("[dot]: Cannot multiply vectors with same Orientation");                             
+        }  
+        if(vector.length!=other.vector.length)
+            throw new IllegalArgumentException("[dot]: Cannot multiply vectors with diferent sizes"); 
+        other.readLock();
+        readLock();
+        try{
+            if(orientation==other.orientation)
+                throw new IllegalArgumentException("[dot]: Cannot multiply vectors with same orientations");
+            for(int i=0;i<vector.length;i++){
+                result += vector[i]*other.vector[i];
+            }
+            return result;
+        }
+        finally{
+            other.readUnlock();
+            readUnlock();
+        }
+        
+    } 
+
+    
 
     public void vecMatMul(SharedMatrix matrix) {
         // TODO: compute row-vector × matrix
+        writeLock();
+        try{
+            if(orientation==VectorOrientation.COLUMN_MAJOR){
+            throw new IllegalArgumentException("[VecMatMul]: vector orientation must be row");
+        }
+        if(matrix.get(0).orientation==VectorOrientation.ROW_MAJOR){
+            if(matrix.length()!=vector.length)
+                throw new IllegalArgumentException("[VecMatMul: Matrix length doesnt fit vector length");
+            double[] res=new double[matrix.get(0).length()];
+            for(int i=0;i<matrix.length();i++){
+                try{
+                    matrix.get(i).readLock(); 
+                    for(int j=0; j<matrix.get(i).length();j++){
+                        res[j]+=vector[i]*matrix.get(i).get(j);
+                    }
+                    
+                 }
+                finally{matrix.get(i).readUnlock();
+                 }
+            }
+            vector=res;
+        }
+        else{ //other matrix is column major
+            if(matrix.get(0).length()!=vector.length){
+                throw new IllegalArgumentException("[VecMatMul]: matrix columns are not equal to vector's length");
+            }
+            double[] res=new double[matrix.length()];
+            for(int i=0; i<matrix.length();i++){
+                res[i]=dot(matrix.get(i));
+            }
+            vector=res;
+        }
     }
+    finally{
+        writeUnlock();
+    }
+    }
+
 }
