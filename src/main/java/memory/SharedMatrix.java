@@ -37,17 +37,34 @@ public class SharedMatrix {
     }
 
     public double[][] readRowMajor() {
-        if (vectors.length == 0) {
-            return new double[0][0];
-        }
-        double[][] output=new double[vectors.length][vectors[0].length()];
-        for(int i=0;i<output.length;i++){
-            for(int j=0;j<output[0].length;j++){
-                output[i][j]=vectors[i].get(j);
+    // TODO: return matrix contents as a row-major double[][]
+    acquireAllVectorReadLocks(vectors);
+    try {
+        double[][] output;
+        if (this.length() == 0)
+            output = new double[0][0];
+        else {
+            if (vectors[0].getOrientation() == VectorOrientation.ROW_MAJOR) {
+                output = new double[this.length()][vectors[0].length()];
+                for (int i = 0; i < this.length(); i++) {
+                    for (int j = 0; j < vectors[0].length(); j++) {
+                        output[i][j] = vectors[i].get(j);
+                    }
+                }
+            } else {
+                output = new double[vectors[0].length()][length()];
+                for (int i = 0; i < vectors[0].length(); i++) {
+                    for (int j = 0; j < vectors.length; j++) {
+                        output[i][j] = vectors[j].get(i);
+                    }
+                }
             }
         }
         return output;
+    } finally {
+        releaseAllVectorReadLocks(vectors);
     }
+}
 
     public SharedVector get(int index) {
         if(index<0 || index>=vectors.length)
