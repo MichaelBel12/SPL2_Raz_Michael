@@ -5,7 +5,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class TiredThread extends Thread implements Comparable<TiredThread> {
+public class TiredThread extends Thread implements Comparable<TiredThread> {      //test
 
     private static final Runnable POISON_PILL = () -> {}; // Special task to signal shutdown
 
