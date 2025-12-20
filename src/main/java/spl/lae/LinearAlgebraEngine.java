@@ -4,6 +4,8 @@ import parser.*;
 import memory.*;
 import scheduling.*;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 public class LinearAlgebraEngine {
@@ -21,7 +23,7 @@ public class LinearAlgebraEngine {
         // TODO: resolve computation tree step by step until final matrix is produced
         ComputationNode compNode = computationRoot.findResolvable();
         compNode.associativeNesting();
-        compNode = computationRoot.findResolvable();
+        compNode = compNode.findResolvable();
         loadAndCompute(compNode);
         
         //TO BE CONTINUED.........
@@ -33,26 +35,31 @@ public class LinearAlgebraEngine {
         // TODO: create compute tasks & submit tasks to executor
         ComputationNodeType nodeType = node.getNodeType();
         List<ComputationNode> listNode = node.getChildren();
+        List<Runnable> toSubmit = new ArrayList<>();
         if(nodeType.equals(ComputationNodeType.ADD)){
             leftMatrix.loadRowMajor(listNode.getFirst().getMatrix());
             rightMatrix.loadRowMajor(listNode.getLast().getMatrix());
-            createAddTasks();
+            toSubmit = createAddTasks();
         }
         if(nodeType.equals(ComputationNodeType.MULTIPLY)){
             leftMatrix.loadRowMajor(listNode.getFirst().getMatrix());
             rightMatrix.loadColumnMajor(listNode.getLast().getMatrix());
-            createMultiplyTasks();
+            toSubmit = createMultiplyTasks();
         }
         if(nodeType.equals(ComputationNodeType.TRANSPOSE)){
-            createTransposeTasks();
+            leftMatrix.loadRowMajor(listNode.getFirst().getMatrix());
+            toSubmit = createTransposeTasks();
         }
         if(nodeType.equals(ComputationNodeType.NEGATE)){
-            createNegateTasks();
+            leftMatrix.loadRowMajor(listNode.getFirst().getMatrix());
+            toSubmit = createNegateTasks();
         }
+        executor.submitAll(toSubmit);
     }
 
     public List<Runnable> createAddTasks() {
         // TODO: return tasks that perform row-wise addition
+        List<Runnable> addOutput = new ArrayList<>();
         return null;
     }
 
@@ -63,12 +70,24 @@ public class LinearAlgebraEngine {
 
     public List<Runnable> createNegateTasks() {
         // TODO: return tasks that negate rows
-        return null;
+        List<Runnable> negateOutput = new ArrayList<>();
+        for(int i = 0; i < leftMatrix.length(); i++){
+            SharedVector negateVector = leftMatrix.get(i);
+            Runnable negRun = () -> {negateVector.negate();};
+            negateOutput.add(negRun);
+        }
+        return negateOutput;
     }
 
     public List<Runnable> createTransposeTasks() {
         // TODO: return tasks that transpose rows
-        return null;
+        List<Runnable> transOutput = new ArrayList<>();
+        for(int i = 0; i < leftMatrix.length(); i++){
+            SharedVector transVector = leftMatrix.get(i);
+            Runnable transRun = () -> {transVector.transpose();};
+            transOutput.add(transRun);
+        }
+        return transOutput;
     }
 
     public String getWorkerReport() {
