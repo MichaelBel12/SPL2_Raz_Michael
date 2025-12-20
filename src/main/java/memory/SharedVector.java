@@ -157,8 +157,9 @@ public class SharedVector {
                 throw new IllegalArgumentException("[VecMatMul]: vector orientation must be row");
         }
             if(matrix.get(0).orientation==VectorOrientation.ROW_MAJOR){
-                if(matrix.length()!=vector.length)
+                if(matrix.length()!=vector.length){
                     throw new IllegalArgumentException("[VecMatMul: Matrix length doesnt fit vector length");
+                }
                 double[] res=new double[matrix.get(0).length()];
                 for(int i=0;i<matrix.length();i++){
                     matrix.get(i).readLock();               

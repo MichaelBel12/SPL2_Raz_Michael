@@ -5,7 +5,6 @@ import memory.*;
 import scheduling.*;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 public class LinearAlgebraEngine {
@@ -21,13 +20,14 @@ public class LinearAlgebraEngine {
 
     public ComputationNode run(ComputationNode computationRoot) {
         // TODO: resolve computation tree step by step until final matrix is produced
-        ComputationNode compNode = computationRoot.findResolvable();
-        compNode.associativeNesting();
-        compNode = compNode.findResolvable();
-        loadAndCompute(compNode);
-        
-        //TO BE CONTINUED.........
-        return compNode;
+        while(computationRoot.getNodeType() != ComputationNodeType.MATRIX){
+            ComputationNode compNode = computationRoot.findResolvable(); 
+            compNode.associativeNesting();
+            compNode = compNode.findResolvable();
+            loadAndCompute(compNode);
+            compNode.resolve(leftMatrix.readRowMajor());
+        }
+            return computationRoot;
     }
 
     public void loadAndCompute(ComputationNode node) {
@@ -60,12 +60,24 @@ public class LinearAlgebraEngine {
     public List<Runnable> createAddTasks() {
         // TODO: return tasks that perform row-wise addition
         List<Runnable> addOutput = new ArrayList<>();
-        return null;
+        for(int i = 0; i < leftMatrix.length(); i++){
+            SharedVector left = leftMatrix.get(i);
+            SharedVector right = rightMatrix.get(i);
+            Runnable addRun = () -> {left.add(right);};
+            addOutput.add(addRun);
+        }
+        return addOutput;
     }
-
+ 
     public List<Runnable> createMultiplyTasks() {
         // TODO: return tasks that perform row × matrix multiplication
-        return null;
+        List<Runnable> mulOutput = new ArrayList<>();
+        for(int i = 0; i < leftMatrix.length(); i++){
+            SharedVector left = leftMatrix.get(i);
+            Runnable mulRun = () -> {left.vecMatMul(rightMatrix);};
+            mulOutput.add(mulRun);
+        }
+        return mulOutput;
     }
 
     public List<Runnable> createNegateTasks() {
