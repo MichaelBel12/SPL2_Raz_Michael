@@ -18,72 +18,83 @@ public class TiredExecutor {
         }
         workers = new TiredThread[numThreads];
         for(int i = 0; i < workers.length; i++){
-            TiredThread thread = new TiredThread(i, Math.random()+0.5);
+            TiredThread thread = new TiredThread(i, Math.random()+0.5); // range [0.5,1.5)
             workers[i] = thread;
             idleMinHeap.put(thread);
-            thread.start();
+            thread.start(); //Kickstarting each thread
         }
     }
 
     public void submit(Runnable task) {
         // TODO
-        synchronized(TiredExecutor.class){
-            updateWorkers();
-            while(idleMinHeap.isEmpty()){
+        terminationLookup();
+        try{
+            TiredThread worker = idleMinHeap.take();
+            Runnable wrappedTask = () -> {          //wraps the task
+                boolean finishedSuccessfully = false;
                 try{
-                    TiredExecutor.class.wait();
-                    updateWorkers();
+                    task.run();
+                    finishedSuccessfully = true;
                 }
-                catch(InterruptedException e){
-                    Thread.currentThread().interrupt(); //TiredExecutor.interrupt() shouldn't happen.
-                    return;
+                catch(Exception e){
+                    System.err.print(e.getMessage());
+                    inFlight.set(-1*workers.length-4); //indicate crash to submitAll (will never reach 0 again)
                 }
-            }
+                finally{
+                    inFlight.decrementAndGet();  //in submitAll, we wait until inFlight is 0;
+                    if(finishedSuccessfully){    //return to heap only if finished successfully
+                        worker.setBusy(false);
+                        idleMinHeap.put(worker);
+                    }
+                    synchronized(this){
+                        this.notifyAll();
+                    }
+                }
+            };
+            inFlight.incrementAndGet();
+            worker.newTask(wrappedTask);
         }
-        TiredThread work = idleMinHeap.poll();
-        inFlight.incrementAndGet();
-        work.newTask(task);
+        catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
     }
 
     public void submitAll(Iterable<Runnable> tasks){
         // TODO: submit tasks one by one and wait until all finish
         Iterator<Runnable> iter = tasks.iterator();
         while(iter.hasNext()){
+            terminationLookup();
             this.submit(iter.next());
         }
-        while(inFlight.get() > 0){
-            synchronized(TiredExecutor.class){
-                updateWorkers();
-                if(inFlight.get() == 0){
-                    break;
-                }
+        synchronized(this){
+            while(inFlight.get() > 0){
+                terminationLookup();
                 try{
-                    TiredExecutor.class.wait();
-                    updateWorkers();
+                    wait();   
                 }
-                catch(InterruptedException e){
-                    Thread.currentThread().interrupt(); //TiredExecutor.interrupt() shouldn't happen.
-                    return;
-                }
+                catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }    
             }
+            terminationLookup();
         }
     }
 
     public void shutdown() throws InterruptedException {
         // TODO
-        for(int i=0;i<workers.length;i++){
+        for(int i = 0; i <workers.length;i++){ //Shuts down all workers one after the other
             TiredThread cur=workers[i];
             cur.shutdown();                  
         }
-        for(int i=0;i<workers.length;i++){
-            workers[i].join();
+        for(int i = 0; i < workers.length;i++){
+            workers[i].join(); //Waits for all workers to terminate
         }
     }
 
     public synchronized String getWorkerReport() {
         // TODO: return readable statistics for each worker
         String output = "";
-        for(int i = 0; i < workers.length; i++){
+        for(int i = 0; i < workers.length; i++){ //All readable statistics for each worker
             TiredThread cur = workers[i];
             output += "Worker " + i + ":\n";
             output += "\tFatigue: " + cur.getFatigue() + "\n";
@@ -94,16 +105,9 @@ public class TiredExecutor {
         return output;
     }
 
-    private void updateWorkers(){
-        for(int i = 0; i < workers.length; i++){ //Handles fetching non-busy workers
-            if(workers[i].getState().equals(Thread.State.TERMINATED)){
-                throw new IllegalThreadStateException("[updateWorkers]: A thread has crashed and been terminated."); 
-            }
-            if(!workers[i].isBusy() && !idleMinHeap.contains(workers[i])){
-                idleMinHeap.put(workers[i]);
-                inFlight.decrementAndGet();
-            }
-            
+    private void terminationLookup(){
+        if(inFlight.get() < 0){
+            throw new IllegalThreadStateException("[terminationLookup]: Thread has crashed and been terminated."); 
         }
     }
 }

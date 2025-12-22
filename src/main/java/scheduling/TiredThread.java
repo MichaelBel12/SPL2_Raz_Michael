@@ -39,7 +39,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
     }
 
     public boolean isBusy() {
-        return busy.get() || !handoff.isEmpty();
+        return busy.get();
     }
 
     public long getTimeUsed() {
@@ -56,13 +56,13 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-        if(busy.get()){
+        if(isBusy() || !handoff.isEmpty()){
             throw new IllegalStateException("[newTask]: Thread is busy! cannot get new task!");
         }
         if(!alive.get()){
             throw new IllegalStateException("[newTask]: Thread is DEAD! cannot get new task!");
         }
-        busy.set(true);
+        busy.set(true); //Once handed a task, set busy to true
         handoff.offer(task);
     }
  
@@ -72,7 +72,12 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
      * Inserts a poison pill so the worker wakes up and exits.
      */
     public void shutdown() {
-        handoff.offer(POISON_PILL);
+        try{
+            handoff.put(POISON_PILL);
+        }
+        catch(InterruptedException e){
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Override
@@ -81,7 +86,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
             try{
                 Runnable curtask=handoff.take();
                 busy.set(true);
-                if(curtask==POISON_PILL){
+                if(curtask==POISON_PILL){ //Shut down signal
                     alive.set(false); 
                     break;
                 }
@@ -96,12 +101,6 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
             catch(InterruptedException e){
                 Thread.currentThread().interrupt(); //Shouldn't happen in our project.
             }
-            finally{ //Notify executor that a task has finished/crashed
-                busy.set(false);
-                synchronized(TiredExecutor.class){
-                    TiredExecutor.class.notifyAll();
-                }
-            }
        }
     }
 
@@ -111,5 +110,9 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
         if(res<0) return -1;
         else if(res>0) return 1;
         else return 0;
+    }
+
+    public void setBusy(boolean val){
+        busy.set(val);
     }
 }
