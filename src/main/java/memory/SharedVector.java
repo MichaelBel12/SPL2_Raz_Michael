@@ -21,7 +21,7 @@ public class SharedVector {
         readLock();
         try {
             if(index<0 || index>=vector.length)
-                throw new IndexOutOfBoundsException("[Sharedvector:Get]: Index out of bounds");
+                throw new IndexOutOfBoundsException("[Sharedvector: Get]: Index out of bounds");
             double output = vector[index];
             return output;
         }
@@ -44,8 +44,8 @@ public class SharedVector {
     public VectorOrientation getOrientation() {
         readLock();
         try{
-            VectorOrientation orient=orientation;
-            return orient;
+            VectorOrientation o=orientation;
+            return o;
         }
         finally{readUnlock();}
     }
@@ -69,7 +69,8 @@ public class SharedVector {
     public void transpose() {
         writeLock();
         try{
-            VectorOrientation opposite = (this.orientation == VectorOrientation.ROW_MAJOR) ? VectorOrientation.COLUMN_MAJOR : VectorOrientation.ROW_MAJOR;      
+            VectorOrientation opposite = (this.orientation == VectorOrientation.ROW_MAJOR) ?
+             VectorOrientation.COLUMN_MAJOR : VectorOrientation.ROW_MAJOR;      
             this.orientation=opposite;
         }
         

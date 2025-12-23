@@ -9,6 +9,8 @@ public class SharedMatrix {
     }
 
     public SharedMatrix(double[][] matrix) {
+        if(matrix==null)
+            throw new IllegalArgumentException("[SharedMatrix]: Given matrix is null");
         vectors=new SharedVector[matrix.length];
         for(int i=0;i<matrix.length;i++){
             vectors[i]=new SharedVector(matrix[i],VectorOrientation.ROW_MAJOR);
@@ -51,7 +53,7 @@ public class SharedMatrix {
                         output[i][j] = vectors[i].get(j);
                     }
                 }
-            } else { //Column major
+            } else {                                                    //Column major
                 output = new double[vectors[0].length()][length()];
                 for (int i = 0; i < vectors[0].length(); i++) {
                     for (int j = 0; j < vectors.length; j++) {
@@ -68,7 +70,7 @@ public class SharedMatrix {
 
     public SharedVector get(int index) {
         if(index<0 || index>=vectors.length)
-            throw new IndexOutOfBoundsException("[SharedVector get]: Index given is invalid");
+            throw new IndexOutOfBoundsException("[SharedVector- get]: Index out of bounds");
         return vectors[index];
     }
 
@@ -81,8 +83,8 @@ public class SharedMatrix {
     public VectorOrientation getOrientation() {
         // TODO: return orientation
         if(vectors.length==0)
-            throw new IndexOutOfBoundsException("[getOrientation]: Given matrix is empty");
-       return vectors[0].getOrientation();
+            throw new IndexOutOfBoundsException("[getOrientation]: Matrix has no vectors(empty)");
+       return vectors[0].getOrientation(); //all vectors have the same orientation(parser ensures this)
     }
 
     private void acquireAllVectorReadLocks(SharedVector[] vecs) {

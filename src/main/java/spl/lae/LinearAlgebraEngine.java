@@ -15,7 +15,7 @@ public class LinearAlgebraEngine {
 
     public LinearAlgebraEngine(int numThreads) {
         // TODO: create executor with given thread count
-        executor = new TiredExecutor(numThreads);
+        executor = new TiredExecutor(numThreads);  //checks for positive numThreads in constructor
     }
 
     public ComputationNode run(ComputationNode computationRoot) {
@@ -28,7 +28,7 @@ public class LinearAlgebraEngine {
                 loadAndCompute(compNode);
                 compNode.resolve(leftMatrix.readRowMajor());
             }
-        }
+        }  //solved computation tree
         finally{
             try{
                 executor.shutdown();
@@ -71,7 +71,7 @@ public class LinearAlgebraEngine {
         // TODO: return tasks that perform row-wise addition
         List<Runnable> addOutput = new ArrayList<>();
         if(leftMatrix.length() != rightMatrix.length()){
-            throw new IllegalArgumentException("[createAddTasks]: Matrix lengths don't match");
+            throw new IllegalArgumentException("[createAddTasks]: Matrices lengths are not equal");
         }
         for(int i = 0; i < leftMatrix.length(); i++){
             SharedVector left = leftMatrix.get(i);
@@ -84,35 +84,35 @@ public class LinearAlgebraEngine {
  
     public List<Runnable> createMultiplyTasks() {
         // TODO: return tasks that perform row × matrix multiplication
-        List<Runnable> mulOutput = new ArrayList<>();
+        List<Runnable> output = new ArrayList<>();
         for(int i = 0; i < leftMatrix.length(); i++){
             SharedVector left = leftMatrix.get(i);
-            Runnable mulRun = () -> {left.vecMatMul(rightMatrix);};
-            mulOutput.add(mulRun);
+            Runnable r = () -> {left.vecMatMul(rightMatrix);};
+            output.add(r);
         }
-        return mulOutput;
+        return output;
     }
 
     public List<Runnable> createNegateTasks() {
         // TODO: return tasks that negate rows
-        List<Runnable> negateOutput = new ArrayList<>();
+        List<Runnable> output = new ArrayList<>();
         for(int i = 0; i < leftMatrix.length(); i++){
             SharedVector negateVector = leftMatrix.get(i);
-            Runnable negRun = () -> {negateVector.negate();};
-            negateOutput.add(negRun);
+            Runnable r = () -> {negateVector.negate();};
+            output.add(r);
         }
-        return negateOutput;
+        return output;
     }
 
     public List<Runnable> createTransposeTasks() {
         // TODO: return tasks that transpose rows
-        List<Runnable> transOutput = new ArrayList<>();
+        List<Runnable> output = new ArrayList<>();
         for(int i = 0; i < leftMatrix.length(); i++){
             SharedVector transVector = leftMatrix.get(i);
-            Runnable transRun = () -> {transVector.transpose();};
-            transOutput.add(transRun);
+            Runnable r = () -> {transVector.transpose();};
+            output.add(r);
         }
-        return transOutput;
+        return output;
     }
 
     public String getWorkerReport() {

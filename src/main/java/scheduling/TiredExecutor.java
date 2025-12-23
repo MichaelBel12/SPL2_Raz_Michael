@@ -27,18 +27,18 @@ public class TiredExecutor {
 
     public void submit(Runnable task) {
         // TODO
-        terminationLookup();
+        terminationLookup(); //perhaps other threads have crashed
         try{
             TiredThread worker = idleMinHeap.take();
-            Runnable wrappedTask = () -> {          //wraps the task
-                boolean finishedSuccessfully = false;
+            Runnable ScopedTask = () -> {     //allowes the worker to return to the heap when done
+                boolean finishedSuccessfully = false; //flag to indicate if the task finished successfully
                 try{
                     task.run();
                     finishedSuccessfully = true;
                 }
                 catch(Exception e){
                     System.err.print(e.getMessage());
-                    inFlight.set(-1*workers.length-4); //indicate crash to submitAll (will never reach 0 again)
+                    inFlight.set(-1*workers.length-5); //indicate crash to submitAll (will never reach 0 again)
                 }
                 finally{
                     inFlight.decrementAndGet();  //in submitAll, we wait until inFlight is 0;
@@ -47,12 +47,12 @@ public class TiredExecutor {
                         idleMinHeap.put(worker);
                     }
                     synchronized(this){
-                        this.notifyAll();
+                        this.notifyAll();  //notify submitAll that a task has finished
                     }
                 }
             };
             inFlight.incrementAndGet();
-            worker.newTask(wrappedTask);
+            worker.newTask(ScopedTask);    //FINALLY hands over the task to the worker
         }
         catch(InterruptedException e){
             Thread.currentThread().interrupt();
@@ -63,10 +63,10 @@ public class TiredExecutor {
         // TODO: submit tasks one by one and wait until all finish
         Iterator<Runnable> iter = tasks.iterator();
         while(iter.hasNext()){
-            terminationLookup();
+            terminationLookup();  //first check if any thread has crashed
             this.submit(iter.next());
         }
-        synchronized(this){
+        synchronized(this){     //wait until all tasks are done
             while(inFlight.get() > 0){
                 terminationLookup();
                 try{

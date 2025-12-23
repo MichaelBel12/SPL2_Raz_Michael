@@ -9,8 +9,8 @@ public class Main {
     public static void main(String[] args) throws IOException {
       // TODO: main
       if(args.length != 3){
-        throw new IOException("[Usage error] This is how to use: java -jar target/lga-1.0.jar <number of threads>" + 
-        "<path/to/input/file> <path/to/output/file>");
+        throw new IOException("[Usage error] Invalid use! use command- java -jar target/lga-1.0.jar <number of threads>" + 
+        " <path/to/input/file> <path/to/output/file>");
       }
       int numOfThreads = Integer.parseInt(args[0]);
       String inputPath = args[1];
