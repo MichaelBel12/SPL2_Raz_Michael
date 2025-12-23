@@ -18,6 +18,8 @@ public class SharedMatrix {
     }
 
     public void loadRowMajor(double[][] matrix) {
+        if(matrix==null)
+            throw new IllegalArgumentException("[SharedMatrix]: Given matrix is null");
         SharedVector[] copy=new SharedVector[matrix.length];
         for(int i=0;i<matrix.length;i++){
             copy[i]=new SharedVector(matrix[i],VectorOrientation.ROW_MAJOR);
@@ -26,6 +28,10 @@ public class SharedMatrix {
     }
 
     public void loadColumnMajor(double[][] matrix) {
+        if(matrix==null)
+            throw new IllegalArgumentException("[SharedMatrix]: Given matrix is null");
+        if(matrix.length==0)
+            throw new IllegalArgumentException("[SharedMatrix]: Given matrix is empty");
         int other_columns=matrix[0].length;
         SharedVector[] copy=new SharedVector[other_columns]; 
         for (int c=0;c<other_columns;c++){

@@ -12,6 +12,9 @@ public class SharedVector {
 
     public SharedVector(double[] vector, VectorOrientation orientation) {
         // TODO: store vector data and its orientation
+        if(vector==null){
+            throw new IllegalArgumentException("[SharedVector]: Vector cannot be null");
+        }
         this.orientation=orientation;
         this.vector=vector;
     }
@@ -21,7 +24,7 @@ public class SharedVector {
         readLock();
         try {
             if(index<0 || index>=vector.length)
-                throw new IndexOutOfBoundsException("[Sharedvector: Get]: Index out of bounds");
+                throw new IndexOutOfBoundsException("[Sharedvector: Get]: out of bounds index");
             double output = vector[index];
             return output;
         }
@@ -82,12 +85,21 @@ public class SharedVector {
     }
 
     public void add(SharedVector other) {
-        if (this==other){   
-            throw new IllegalArgumentException("[Add]: Cannot add a vector to itself");                              
+        if (this==other){
+            writeLock();
+            try{  
+            for(int i=0;i<vector.length;i++){
+                    vector[i] = vector[i]+ vector[i];
+                }
+                return;
+            }
+            finally{
+                writeUnlock();
+            }                       
         }
-        int h1 = System.identityHashCode(this);
-        int h2 = System.identityHashCode(other);
-        if(h1 > h2){ //Preventing lock
+        int a = System.identityHashCode(this);
+        int b = System.identityHashCode(other);
+        if(a > b){                             
             other.readLock();
             writeLock();
         }
@@ -122,19 +134,30 @@ public class SharedVector {
             writeUnlock();  
         }
     }
-    public double dot(SharedVector other) {  //Note: Might cause deadlock if a*b and b*a are executed at the same time, yet-
-        double result=0;                        //This situation wont happen in LAE implementation
+    public double dot(SharedVector other) { 
+        if(other==null){
+            throw new IllegalArgumentException("[dot]: other vector is null");
+        }                        
         if (this==other){                            
           throw new IllegalArgumentException("[dot]: Cannot multiply vectors with same Orientation");                             
         }  
-        other.readLock();
-        readLock();
+        double result=0;
+        int a= System.identityHashCode(this);
+        int b= System.identityHashCode(other);
+        if(a>b){                             
+            readLock();
+            other.readLock();
+        }
+        else{
+            other.readLock();
+            readLock();
+        }
         try{
             if(vector.length!=other.vector.length){
-                throw new IllegalArgumentException("[dot]: Cannot multiply vectors with different sizes");
+                throw new IllegalArgumentException("[dot]: Vectors have different lengths");
             }
             if(orientation==other.orientation){
-                throw new IllegalArgumentException("[dot]: Cannot multiply vectors with same orientations");
+                throw new IllegalArgumentException("[dot]: Vectors have same orientations");
             }
             for(int i=0;i<vector.length;i++){
                 result += vector[i]*other.vector[i];
@@ -153,13 +176,22 @@ public class SharedVector {
     public void vecMatMul(SharedMatrix matrix) {
         // TODO: compute row-vector × matrix
         writeLock();
+        if(matrix==null || matrix.length()==0){
+            throw new IllegalArgumentException("[VecMatMul]: matrix is null");
+        }
+        if(vector.length==0 && matrix.length()==0){
+            return;
+        }
+        if(matrix.length()==0){
+            throw new IllegalArgumentException("[VecMatMul]: matrix has zero rows, cannot multiply");
+        }
         try{
             if(orientation==VectorOrientation.COLUMN_MAJOR){           
-                throw new IllegalArgumentException("[VecMatMul]: vector orientation must be row");
+                throw new IllegalArgumentException("[VecMatMul]: vector is not row major");
         }
             if(matrix.get(0).orientation==VectorOrientation.ROW_MAJOR){
                 if(matrix.length()!=vector.length){
-                    throw new IllegalArgumentException("[VecMatMul]: Matrix length doesnt fit vector length");
+                    throw new IllegalArgumentException("[VecMatMul]: matrix rows are not equal to vector's length");
                 }
                 double[] res=new double[matrix.get(0).length()];
                 for(int i=0;i<matrix.length();i++){

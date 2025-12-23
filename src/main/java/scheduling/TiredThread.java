@@ -24,6 +24,9 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
     private final AtomicLong idleStartTime = new AtomicLong(0); // Timestamp when the worker became idle
 
     public TiredThread(int id, double fatigueFactor) {
+        if(fatigueFactor<0.5 || fatigueFactor>1.5){
+            throw new IllegalArgumentException("[TiredThread]: fatigue factor must be between 0.5 and 1.5!");
+        }
         this.id = id;
         this.fatigueFactor = fatigueFactor;
         this.idleStartTime.set(System.nanoTime());
@@ -56,13 +59,13 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
      * it throws IllegalStateException.
      */
     public void newTask(Runnable task) {
-        if(isBusy() || !handoff.isEmpty()){
-            throw new IllegalStateException("[newTask]: Thread is busy! cannot get new task!");
+        if(isBusy() || !handoff.isEmpty()){  
+            throw new IllegalStateException("[newTask]: this worker is already busy");
         }
         if(!alive.get()){
-            throw new IllegalStateException("[newTask]: Thread is DEAD! cannot get new task!");
+            throw new IllegalStateException("[newTask]: Worker is shut down");
         }
-        busy.set(true); //Once handed a task, set busy to true
+        busy.set(true); 
         handoff.offer(task);
     }
  
@@ -76,7 +79,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
             handoff.put(POISON_PILL);
         }
         catch(InterruptedException e){
-            Thread.currentThread().interrupt();
+            Thread.currentThread().interrupt(); //shouldn't happen in lae
         }
     }
 
@@ -85,21 +88,21 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
        while(alive.get()){
             try{
                 Runnable curtask=handoff.take();
-                busy.set(true);
-                if(curtask==POISON_PILL){ //Shut down signal
+                busy.set(true); 
+                if(curtask==POISON_PILL){ //checking for pill to shut down
                     alive.set(false); 
                     break;
                 }
                 long curStartTime=(System.nanoTime());
                 timeIdle.addAndGet(System.nanoTime()-idleStartTime.get());
-                curtask.run();
+                curtask.run();          //when done returns itself to heap in executor
                 long curStopTime=(System.nanoTime());
                 long TaskDuration=curStopTime-curStartTime;
                 timeUsed.addAndGet(TaskDuration);
                 idleStartTime.set(System.nanoTime());
             }
             catch(InterruptedException e){
-                Thread.currentThread().interrupt(); //Shouldn't happen in our project.
+                Thread.currentThread().interrupt(); //shouldn't happen in lae
             }
        }
     }
@@ -112,7 +115,7 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
         else return 0;
     }
 
-    public void setBusy(boolean val){
-        busy.set(val);
+    public void setBusy(boolean val){           //allows the wrapped task to set busy flag inbetween- 
+        busy.set(val);                           //task runs and returning to heap
     }
 }

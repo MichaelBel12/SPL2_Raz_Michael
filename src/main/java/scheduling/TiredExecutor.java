@@ -18,10 +18,11 @@ public class TiredExecutor {
         }
         workers = new TiredThread[numThreads];
         for(int i = 0; i < workers.length; i++){
-            TiredThread thread = new TiredThread(i, Math.random()+0.5); // range [0.5,1.5)
+            TiredThread thread = new TiredThread(i, Math.random()+0.5); //Fatigue factor between 0.5 and 1.5
             workers[i] = thread;
             idleMinHeap.put(thread);
-            thread.start(); //Kickstarting each thread
+            thread.start();      
+                           
         }
     }
 
@@ -30,29 +31,29 @@ public class TiredExecutor {
         terminationLookup(); //perhaps other threads have crashed
         try{
             TiredThread worker = idleMinHeap.take();
-            Runnable ScopedTask = () -> {     //allowes the worker to return to the heap when done
-                boolean finishedSuccessfully = false; //flag to indicate if the task finished successfully
+            Runnable ScopedTask = () -> {                   //allowes the worker to return to the heap when done
+                boolean finishedSuccessfully = false;       //flag to indicate if the task finished successfully
                 try{
                     task.run();
                     finishedSuccessfully = true;
                 }
                 catch(Exception e){
                     System.err.print(e.getMessage());
-                    inFlight.set(-1*workers.length-5); //indicate crash to submitAll (will never reach 0 again)
+                    inFlight.set(-1*workers.length-5);      //indicate crash to submitAll (will never reach 0 again)
                 }
                 finally{
-                    inFlight.decrementAndGet();  //in submitAll, we wait until inFlight is 0;
-                    if(finishedSuccessfully){    //return to heap only if finished successfully
+                    inFlight.decrementAndGet();              //in submitAll, we wait until inFlight is 0;
+                    if(finishedSuccessfully){                //return to heap only if finished successfully
                         worker.setBusy(false);
                         idleMinHeap.put(worker);
                     }
                     synchronized(this){
-                        this.notifyAll();  //notify submitAll that a task has finished
+                        this.notifyAll();                     //notify submitAll that a task has finished
                     }
                 }
             };
             inFlight.incrementAndGet();
-            worker.newTask(ScopedTask);    //FINALLY hands over the task to the worker
+            worker.newTask(ScopedTask);                      //FINALLY hands over the task to the worker
         }
         catch(InterruptedException e){
             Thread.currentThread().interrupt();
@@ -63,10 +64,10 @@ public class TiredExecutor {
         // TODO: submit tasks one by one and wait until all finish
         Iterator<Runnable> iter = tasks.iterator();
         while(iter.hasNext()){
-            terminationLookup();  //first check if any thread has crashed
+            terminationLookup();                     //first check if any thread has crashed
             this.submit(iter.next());
         }
-        synchronized(this){     //wait until all tasks are done
+        synchronized(this){                        //wait until all tasks are done
             while(inFlight.get() > 0){
                 terminationLookup();
                 try{
