@@ -93,13 +93,8 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
                     alive.set(false); 
                     break;
                 }
-                long curStartTime=(System.nanoTime());
                 timeIdle.addAndGet(System.nanoTime()-idleStartTime.get());
                 curtask.run();          //when done returns itself to heap in executor
-                long curStopTime=(System.nanoTime());
-                long TaskDuration=curStopTime-curStartTime;
-                timeUsed.addAndGet(TaskDuration);
-                idleStartTime.set(System.nanoTime());
             }
             catch(InterruptedException e){
                 Thread.currentThread().interrupt(); //shouldn't happen in lae
@@ -117,5 +112,12 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
 
     public void setBusy(boolean val){           //allows the wrapped task to set busy flag inbetween- 
         busy.set(val);                           //task runs and returning to heap
+    }
+
+    public void setStopTimes(long startTime){
+        long stoptime=System.nanoTime();
+        long taskduration=stoptime-startTime;
+        timeUsed.addAndGet(taskduration);
+        idleStartTime.set(System.nanoTime());
     }
 }

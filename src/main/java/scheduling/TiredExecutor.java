@@ -32,21 +32,21 @@ public class TiredExecutor {
         try{
             TiredThread worker = idleMinHeap.take();
             Runnable ScopedTask = () -> {                   //allowes the worker to return to the heap when done
-                boolean finishedSuccessfully = false;       //flag to indicate if the task finished successfully
                 try{
+                    long startTime = System.nanoTime();
                     task.run();
-                    finishedSuccessfully = true;
+                    worker.setStopTimes(startTime);   //update time used and idle start time before returning to heap
+                    worker.setBusy(false);
+                    idleMinHeap.put(worker);
                 }
                 catch(Exception e){
                     System.err.print(e.getMessage());
-                    inFlight.set(-1*workers.length-5);      //indicate crash to submitAll (will never reach 0 again)
+                    inFlight.set(-1*workers.length-5);
+                    throw e;      //indicate crash to submitAll (will never reach 0 again)
                 }
                 finally{
                     inFlight.decrementAndGet();              //in submitAll, we wait until inFlight is 0;
-                    if(finishedSuccessfully){                //return to heap only if finished successfully
-                        worker.setBusy(false);
-                        idleMinHeap.put(worker);
-                    }
+                                                               //return to heap only if finished successfully
                     synchronized(this){
                         this.notifyAll();                     //notify submitAll that a task has finished
                     }
@@ -103,6 +103,7 @@ public class TiredExecutor {
             output += "\tTime Idle (ns): " + cur.getTimeIdle() + "\n";
             output += "\tIs Busy: " + cur.isBusy() + "\n";
         }
+         output += "\tFairness: " + this.fairnessCalculation() + "\n";
         return output;
     }
 
@@ -110,5 +111,18 @@ public class TiredExecutor {
         if(inFlight.get() < 0){
             throw new IllegalThreadStateException("[terminationLookup]: Thread has crashed and been terminated."); 
         }
+    }
+    public double fairnessCalculation(){
+        double totalFatigue = 0.0;
+        for(TiredThread worker : workers){
+            totalFatigue += worker.getFatigue();
+        }
+        double averageFatigue = totalFatigue / workers.length;
+        double sumSquaredDiffs = 0.0;
+        for(TiredThread worker : workers){
+            double diff = worker.getFatigue() - averageFatigue;
+            sumSquaredDiffs += diff * diff;
+        }
+        return sumSquaredDiffs;
     }
 }

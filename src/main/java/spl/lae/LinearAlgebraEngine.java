@@ -31,6 +31,7 @@ public class LinearAlgebraEngine {
         }  //solved computation tree
         finally{
             try{
+                System.out.println(executor.getWorkerReport());
                 executor.shutdown();
             }
             catch(InterruptedException e){
