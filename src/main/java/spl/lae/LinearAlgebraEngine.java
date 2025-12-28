@@ -74,6 +74,7 @@ public class LinearAlgebraEngine {
         if(leftMatrix.length() != rightMatrix.length()){
             throw new IllegalArgumentException("[createAddTasks]: Matrices lengths are not equal");
         }
+    
         for(int i = 0; i < leftMatrix.length(); i++){
             SharedVector left = leftMatrix.get(i);
             SharedVector right = rightMatrix.get(i);

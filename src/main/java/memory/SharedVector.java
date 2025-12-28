@@ -15,6 +15,9 @@ public class SharedVector {
         if(vector==null){
             throw new IllegalArgumentException("[SharedVector]: Vector cannot be null");
         }
+        if(orientation==null){
+            throw new IllegalArgumentException("[SharedVector]: Orientation cannot be null");
+        }
         this.orientation=orientation;
         this.vector=vector;
     }
@@ -176,7 +179,7 @@ public class SharedVector {
     public void vecMatMul(SharedMatrix matrix) {
         // TODO: compute row-vector × matrix
         writeLock();
-        if(matrix==null || matrix.length()==0){
+        if(matrix==null){
             throw new IllegalArgumentException("[VecMatMul]: matrix is null");
         }
         if(vector.length==0 && matrix.length()==0){
@@ -221,6 +224,10 @@ public class SharedVector {
         finally{
             writeUnlock();
         }
+    }
+
+    double[] getVector(){
+        return vector;
     }
 
 }

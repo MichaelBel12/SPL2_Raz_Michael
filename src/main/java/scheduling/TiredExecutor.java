@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TiredExecutor {
-
     private final TiredThread[] workers;
     private final PriorityBlockingQueue<TiredThread> idleMinHeap = new PriorityBlockingQueue<>();
     private final AtomicInteger inFlight = new AtomicInteger(0);
@@ -22,27 +21,26 @@ public class TiredExecutor {
             workers[i] = thread;
             idleMinHeap.put(thread);
             thread.start();      
-                           
         }
     }
 
     public void submit(Runnable task) {
         // TODO
-        terminationLookup(); //perhaps other threads have crashed
+        terminationLookup();                                  //perhaps other threads have crashed
         try{
             TiredThread worker = idleMinHeap.take();
             Runnable ScopedTask = () -> {                   //allowes the worker to return to the heap when done
                 try{
                     long startTime = System.nanoTime();
                     task.run();
-                    worker.setStopTimes(startTime);   //update time used and idle start time before returning to heap
+                    worker.setStopTimes(startTime);              //update time used and idle start time before returning to heap
                     worker.setBusy(false);
                     idleMinHeap.put(worker);
                 }
-                catch(Exception e){
+                catch(Exception e){ 
                     System.err.print(e.getMessage());
-                    inFlight.set(-1*workers.length-5);
-                    throw e;      //indicate crash to submitAll (will never reach 0 again)
+                    inFlight.set(-1*workers.length-5);            //indicate crash to submitAll (will never reach 0 again)
+                    throw e;      
                 }
                 finally{
                     inFlight.decrementAndGet();              //in submitAll, we wait until inFlight is 0;
@@ -102,6 +100,7 @@ public class TiredExecutor {
             output += "\tTime Used (ns): " + cur.getTimeUsed() + "\n";
             output += "\tTime Idle (ns): " + cur.getTimeIdle() + "\n";
             output += "\tIs Busy: " + cur.isBusy() + "\n";
+           
         }
          output += "\tFairness: " + this.fairnessCalculation() + "\n";
         return output;
@@ -124,5 +123,16 @@ public class TiredExecutor {
             sumSquaredDiffs += diff * diff;
         }
         return sumSquaredDiffs;
+    }
+     int getInFlight(){  //for testing purposes
+        return inFlight.get();
+    }
+
+    boolean minHeapIsEmpty(){
+        return idleMinHeap.isEmpty();
+    }
+
+    TiredThread[] getWorkers(){
+        return workers;
     }
 }

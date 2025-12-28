@@ -22,9 +22,9 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
     private final AtomicLong timeUsed = new AtomicLong(0); // Total time spent executing tasks
     private final AtomicLong timeIdle = new AtomicLong(0); // Total time spent idle
     private final AtomicLong idleStartTime = new AtomicLong(0); // Timestamp when the worker became idle
-
+    
     public TiredThread(int id, double fatigueFactor) {
-        if(fatigueFactor<0.5 || fatigueFactor>1.5){
+        if(fatigueFactor<0.5 || fatigueFactor>=1.5){
             throw new IllegalArgumentException("[TiredThread]: fatigue factor must be between 0.5 and 1.5!");
         }
         this.id = id;
@@ -120,4 +120,12 @@ public class TiredThread extends Thread implements Comparable<TiredThread> {    
         timeUsed.addAndGet(taskduration);
         idleStartTime.set(System.nanoTime());
     }
-}
+
+    boolean hasTaskInQueue(){            //for testing purposes
+    return !handoff.isEmpty();
+     }
+
+    void setTimeUsed(){    //for testing purposes
+    timeUsed.set(100);
+    }
+ }

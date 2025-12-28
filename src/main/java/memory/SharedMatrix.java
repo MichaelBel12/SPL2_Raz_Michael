@@ -30,8 +30,10 @@ public class SharedMatrix {
     public void loadColumnMajor(double[][] matrix) {
         if(matrix==null)
             throw new IllegalArgumentException("[SharedMatrix]: Given matrix is null");
-        if(matrix.length==0)
-            throw new IllegalArgumentException("[SharedMatrix]: Given matrix is empty");
+        if(matrix.length==0){
+           vectors = new SharedVector[0];
+            return;
+        }
         int other_columns=matrix[0].length;
         SharedVector[] copy=new SharedVector[other_columns]; 
         for (int c=0;c<other_columns;c++){
