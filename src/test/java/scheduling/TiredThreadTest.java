@@ -4,51 +4,64 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TiredThreadTest {
+
     @Test
-    public void testThreadConstructor() {
-        //test 1: Invalid fatigue factor <0.5
-        assertThrows(IllegalArgumentException.class, () -> {new TiredThread(1, 0.3);});
-        //test 2: Invalid fatigure factor >=1.5
-        assertThrows(IllegalArgumentException.class, () -> {new TiredThread(1, 1.5);});
+    public void testWorkerConfiguration() {
+        // Validation 1: Rejection of fatigue factors below the 0.5 threshold
+        assertThrows(IllegalArgumentException.class, () -> { 
+            new TiredThread(101, 0.45); 
+        });
+
+        // Validation 2: Rejection of fatigue factors at or above the 1.5 limit
+        assertThrows(IllegalArgumentException.class, () -> { 
+            new TiredThread(102, 1.5); 
+        });
     }
 
-
     @Test
-    public void testThreadNewTask(){
-        //test 1: Thread receives runnable inside handoff queue
-        TiredThread thread = new TiredThread(1, 0.7);
-        Runnable task = () -> {return;};
-        thread.newTask(task);
-        assertTrue(thread.hasTaskInQueue());
-
-        //test 2: Trying to hand a new task when handoff is full
-        assertThrows(IllegalStateException.class, () -> {thread.newTask(() -> {});});
-    }
-    @Test
-    public void testCompareTo() {
-        //test 1: Both fatigues are 0
-        TiredThread t1 = new TiredThread(1, 0.5);
-        TiredThread t2 = new TiredThread(2, 1.4);
-        assertEquals(0, t1.compareTo(t2));
-
-        //test 2: One thread's fatigue is higher
-        t1.setTimeUsed();
+    public void testTaskAssignmentLogic() {
+        // Validation 1: Verify that a task successfully enters the internal handoff mechanism
+        TiredThread unit = new TiredThread(5, 0.85);
+        Runnable workItem = () -> { /* logic */ };
         
-        assertEquals(1, t1.compareTo(t2));
-        assertEquals(-1, t2.compareTo(t1));
+        unit.newTask(workItem);
+        assertTrue(unit.hasTaskInQueue(), "The worker's handoff queue should report as occupied");
+
+        // Validation 2: Ensure an exception is raised when attempting to overfill the handoff queue
+        assertThrows(IllegalStateException.class, () -> { 
+            unit.newTask(() -> { /* second task */ }); 
+        });
     }
+
     @Test
-    public void testShutdown() {
-        //test 1: Successful shutdown terminates thread
-        TiredThread thread = new TiredThread(1, 1.0);
-        thread.start();
-        thread.shutdown();
+    public void testPrioritizationOrdering() {
+        // Validation 1: Equal priority when neither thread has accumulated "exhaustion"
+        TiredThread workerA = new TiredThread(1, 0.6);
+        TiredThread workerB = new TiredThread(2, 1.2);
+        assertEquals(0, workerA.compareTo(workerB), "Threads with zero work time should be equivalent in priority");
 
-        assertDoesNotThrow(() -> thread.join(1000)); 
-        assertFalse(thread.isAlive());
+        // Validation 2: Priority shift after one thread records work duration
+        workerA.setTimeUsed(); // Simulating fatigue accumulation
+        
+        // workerA is now "more tired" than workerB
+        assertEquals(1, workerA.compareTo(workerB), "More tired thread should have higher comparison value");
+        assertEquals(-1, workerB.compareTo(workerA), "Fresher thread should have lower comparison value");
+    }
 
-        //test 2: Assigning test to terminated thread
+    @Test
+    public void testThreadDeactivation() {
+        // Validation 1: Confirm that shutdown effectively kills the execution context
+        TiredThread probe = new TiredThread(99, 1.1);
+        probe.start();
+        probe.shutdown();
+
+        // Ensure the thread wraps up and exits within a reasonable timeout
+        assertDoesNotThrow(() -> probe.join(2000)); 
+        assertFalse(probe.isAlive(), "Thread must not be active after shutdown and join");
+
+        // Validation 2: Reject new task assignments for a dead thread
         assertThrows(IllegalStateException.class, () -> {
-            thread.newTask(() -> {});});
+            probe.newTask(() -> {}); 
+        });
     }
 }

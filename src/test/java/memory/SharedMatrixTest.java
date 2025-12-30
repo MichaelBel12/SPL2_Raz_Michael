@@ -6,88 +6,98 @@ import static org.junit.jupiter.api.Assertions.*;
 public class SharedMatrixTest {
 
     @Test
-    public void testMatrixConstructor() {
-        //test 1: Null array
-        assertThrows(IllegalArgumentException.class, () -> {new SharedMatrix(null);});
+    public void testInstanceCreation() {
+        // Validation 1: Check rejection of null array inputs
+        assertThrows(IllegalArgumentException.class, () -> { 
+            new SharedMatrix(null); 
+        });
     }
 
     @Test
-    public void testLoadRowMajor() {
-        //test 1: Successful load
-        SharedMatrix mat1 = new SharedMatrix();
-        double[][] input = {{1.0, 2.0}, {3.0, 4.0}};
-        mat1.loadRowMajor(input);
+    public void testHorizontalStorage() {
+        // Validation 1: Verify successful horizontal (Row-Major) data ingestion
+        SharedMatrix matrixA = new SharedMatrix();
+        double[][] sampleGrid = {{10.5, 11.5}, {12.5, 13.5}};
+        matrixA.loadRowMajor(sampleGrid);
         
-        double[][] actOutput = mat1.readRowMajor();
-        assertArrayEquals(input, actOutput);
-        assertEquals(VectorOrientation.ROW_MAJOR, mat1.getOrientation());
+        double[][] retrievedData = matrixA.readRowMajor();
+        assertArrayEquals(sampleGrid, retrievedData);
+        assertEquals(VectorOrientation.ROW_MAJOR, matrixA.getOrientation());
 
-        //test 2: Null matrix
-        assertThrows(IllegalArgumentException.class, () -> {mat1.loadRowMajor(null);});
+        // Validation 2: Ensure null check is active
+        assertThrows(IllegalArgumentException.class, () -> { 
+            matrixA.loadRowMajor(null); 
+        });
     }
 
     @Test
-    public void testLoadColumnMajor() {
-        //test 1: Successful load
-        SharedMatrix mat1 = new SharedMatrix();
-        double[][] input = {{1.0, 2.0, 3.0}, {4.0, 5.0, 6.0}};
-        mat1.loadColumnMajor(input);
+    public void testVerticalStorage() {
+        // Validation 1: Verify successful vertical (Column-Major) data ingestion
+        SharedMatrix matrixB = new SharedMatrix();
+        double[][] rawMatrix = {{1.1, 2.2, 3.3}, {4.4, 5.5, 6.6}};
+        matrixB.loadColumnMajor(rawMatrix);
         
-        assertEquals(3, mat1.length()); 
-        assertEquals(VectorOrientation.COLUMN_MAJOR, mat1.getOrientation());
-        assertArrayEquals(input, mat1.readRowMajor());
+        assertEquals(3, matrixB.length()); 
+        assertEquals(VectorOrientation.COLUMN_MAJOR, matrixB.getOrientation());
+        assertArrayEquals(rawMatrix, matrixB.readRowMajor());
 
-        //test 2: Null matrix
-        assertThrows(IllegalArgumentException.class, () -> {mat1.loadColumnMajor(null);});
+        // Validation 2: Ensure null check is active
+        assertThrows(IllegalArgumentException.class, () -> { 
+            matrixB.loadColumnMajor(null); 
+        });
 
-        //test 3: Empty matrix
-        double[][] emptyInput = {};
-        SharedMatrix mat2 = new SharedMatrix();
-        mat2.loadColumnMajor(emptyInput);
+        // Validation 3: Edge case - handling an empty dataset
+        double[][] blankInput = {};
+        SharedMatrix matrixC = new SharedMatrix();
+        matrixC.loadColumnMajor(blankInput);
 
-        double[][] actOutput = mat2.readRowMajor();
-        assertArrayEquals(emptyInput, actOutput);
+        double[][] outputGrid = matrixC.readRowMajor();
+        assertArrayEquals(blankInput, outputGrid);
     }
 
     @Test
-    public void testReadRowMajor() {
-        //test 1: Read empty matrix
-        SharedMatrix mat1 = new SharedMatrix();
-        double[][] emptyRes = mat1.readRowMajor();
-        assertEquals(0, emptyRes.length);
+    public void testDataRetrieval() {
+        // Validation 1: Reading an uninitialized/empty matrix
+        SharedMatrix matrixD = new SharedMatrix();
+        double[][] emptyResult = matrixD.readRowMajor();
+        assertEquals(0, emptyResult.length);
 
-        //test 2: Read Row Major Data
-        double[][] dataRow = {{1.0, 2.0}, {3.0, 4.0}};
-        mat1.loadRowMajor(dataRow);
-        assertArrayEquals(dataRow, mat1.readRowMajor());
+        // Validation 2: Confirming Row Major persistence
+        double[][] rowSet = {{5.0, 6.0}, {7.0, 8.0}};
+        matrixD.loadRowMajor(rowSet);
+        assertArrayEquals(rowSet, matrixD.readRowMajor());
 
-        //test 3: Read Column Major Data
-        mat1.loadColumnMajor(dataRow);
-        assertArrayEquals(dataRow, mat1.readRowMajor());
+        // Validation 3: Confirming Column Major persistence
+        matrixD.loadColumnMajor(rowSet);
+        assertArrayEquals(rowSet, matrixD.readRowMajor());
     }
 
     @Test
-    public void testGet() {
-        //test 1: Successful Get
-        SharedMatrix mat1 = new SharedMatrix(new double[][]{{1.0, 2.0, 3.0},{6.0,1.0,1.0}});
-        SharedVector v = mat1.get(1);
-        assertEquals(6.0, v.get(0));
+    public void testVectorAccess() {
+        // Validation 1: Successful retrieval of a vector at a specific index
+        SharedMatrix matrixE = new SharedMatrix(new double[][]{{100.0, 200.0, 300.0}, {400.0, 500.0, 600.0}});
+        SharedVector segment = matrixE.get(1); // Accessing second row/column
+        assertEquals(400.0, segment.get(0));
 
-        //test 2: Index out of bounds (Negative)
-        assertThrows(IndexOutOfBoundsException.class, () -> {mat1.get(-1);});
+        // Validation 2: Bound check - Negative index
+        assertThrows(IndexOutOfBoundsException.class, () -> { 
+            matrixE.get(-1); 
+        });
 
-        //test 3: Index out of bounds (Too large)
-        assertThrows(IndexOutOfBoundsException.class, () -> {mat1.get(4);});
+        // Validation 3: Bound check - Index exceeding size
+        assertThrows(IndexOutOfBoundsException.class, () -> { 
+            matrixE.get(10); 
+        });
     }
 
     @Test
-    public void testGetOrientation() {
-        //test 1: Row Major
-        SharedMatrix mat1 = new SharedMatrix(new double[][]{{1.0}});
-        assertEquals(VectorOrientation.ROW_MAJOR, mat1.getOrientation());
+    public void testCurrentStateOrientation() {
+        // Validation 1: Initial state or standard row-major load
+        SharedMatrix matrixF = new SharedMatrix(new double[][]{{9.9}});
+        assertEquals(VectorOrientation.ROW_MAJOR, matrixF.getOrientation());
 
-        //test 2: Column Major
-        mat1.loadColumnMajor(new double[][]{{1.0}});
-        assertEquals(VectorOrientation.COLUMN_MAJOR, mat1.getOrientation());
+        // Validation 2: After switching to column-major
+        matrixF.loadColumnMajor(new double[][]{{9.9}});
+        assertEquals(VectorOrientation.COLUMN_MAJOR, matrixF.getOrientation());
     }
 }

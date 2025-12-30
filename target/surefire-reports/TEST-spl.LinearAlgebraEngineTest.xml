@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="memory.SharedMatrixTest" time="0.056" tests="6" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report-3.0.xsd" version="3.0" name="spl.LinearAlgebraEngineTest" time="0.037" tests="7" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="23"/>
     <property name="sun.cpu.isalist" value="amd64"/>
@@ -58,10 +58,107 @@
     <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
     <property name="java.class.version" value="67.0"/>
   </properties>
-  <testcase name="testVerticalStorage" classname="memory.SharedMatrixTest" time="0.024"/>
-  <testcase name="testCurrentStateOrientation" classname="memory.SharedMatrixTest" time="0.001"/>
-  <testcase name="testInstanceCreation" classname="memory.SharedMatrixTest" time="0.002"/>
-  <testcase name="testDataRetrieval" classname="memory.SharedMatrixTest" time="0.001"/>
-  <testcase name="testVectorAccess" classname="memory.SharedMatrixTest" time="0.0"/>
-  <testcase name="testHorizontalStorage" classname="memory.SharedMatrixTest" time="0.001"/>
+  <testcase name="testEngineConstructor" classname="spl.LinearAlgebraEngineTest" time="0.002"/>
+  <testcase name="testTransposeAndNegate" classname="spl.LinearAlgebraEngineTest" time="0.019">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 26304.396622967513
+	Time Used (ns): 24400
+	Time Idle (ns): 1580100
+	Is Busy: false
+	Fairness: 0.0
+
+Worker 0:
+	Fatigue: 27916.636448664634
+	Time Used (ns): 19000
+	Time Idle (ns): 487600
+	Is Busy: false
+	Fairness: 0.0
+
+]]></system-out>
+  </testcase>
+  <testcase name="testSimpleMultiplication" classname="spl.LinearAlgebraEngineTest" time="0.001">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 31109.152429363403
+	Time Used (ns): 24700
+	Time Idle (ns): 464600
+	Is Busy: false
+Worker 1:
+	Fatigue: 28369.78322364309
+	Time Used (ns): 21900
+	Time Idle (ns): 335300
+	Is Busy: false
+	Fairness: 3752071.822624366
+
+]]></system-out>
+  </testcase>
+  <testcase name="testSimpleAddition" classname="spl.LinearAlgebraEngineTest" time="0.001">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 23488.360692059377
+	Time Used (ns): 20800
+	Time Idle (ns): 451700
+	Is Busy: false
+Worker 1:
+	Fatigue: 10864.402006721828
+	Time Used (ns): 9000
+	Time Idle (ns): 337500
+	Is Busy: false
+	Fairness: 7.968216644455469E7
+
+]]></system-out>
+  </testcase>
+  <testcase name="testWorkerReport" classname="spl.LinearAlgebraEngineTest" time="0.001">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 5680.87545359759
+	Time Used (ns): 6500
+	Time Idle (ns): 322600
+	Is Busy: false
+Worker 1:
+	Fatigue: 0.0
+	Time Used (ns): 0
+	Time Idle (ns): 0
+	Is Busy: false
+	Fairness: 1.6136172959643815E7
+
+]]></system-out>
+  </testcase>
+  <testcase name="testComplexTreeResolution" classname="spl.LinearAlgebraEngineTest" time="0.002">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 20490.878507713278
+	Time Used (ns): 19100
+	Time Idle (ns): 637300
+	Is Busy: false
+Worker 1:
+	Fatigue: 38039.81752174763
+	Time Used (ns): 26200
+	Time Idle (ns): 703400
+	Is Busy: false
+Worker 2:
+	Fatigue: 19735.095704254483
+	Time Used (ns): 13200
+	Time Idle (ns): 570800
+	Is Busy: false
+Worker 3:
+	Fatigue: 16737.181942605363
+	Time Used (ns): 14800
+	Time Idle (ns): 316900
+	Is Busy: false
+	Fairness: 2.801198291057592E8
+
+]]></system-out>
+  </testcase>
+  <testcase name="testMismatchedDimensions" classname="spl.LinearAlgebraEngineTest" time="0.004">
+    <system-out><![CDATA[Worker 0:
+	Fatigue: 0.0
+	Time Used (ns): 0
+	Time Idle (ns): 0
+	Is Busy: false
+Worker 1:
+	Fatigue: 0.0
+	Time Used (ns): 0
+	Time Idle (ns): 0
+	Is Busy: false
+	Fairness: 0.0
+
+]]></system-out>
+  </testcase>
 </testsuite>

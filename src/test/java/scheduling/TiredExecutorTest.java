@@ -4,65 +4,89 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TiredExecutorTest {
-    @Test
-    public void testExecutorConstructor() {
-        //test 1: Input 0 threads
-        assertThrows(IllegalArgumentException.class, () -> {new TiredExecutor(0);});
 
-        //test 2: Input negative threads
-        assertThrows(IllegalArgumentException.class, () -> {new TiredExecutor(-3);});
+    @Test
+    public void testPoolConstruction() {
+        // Validation 1: Ensure zero-capacity pools are disallowed
+        assertThrows(IllegalArgumentException.class, () -> { 
+            new TiredExecutor(0); 
+        });
+
+        // Validation 2: Ensure negative capacity triggers an exception
+        assertThrows(IllegalArgumentException.class, () -> { 
+            new TiredExecutor(-5); 
+        });
     }
 
     @Test
-    public void testSubmit() {
-        //test 1: Successful submit, one of these will happen: inFlight = 1 or idleMinHeap !empty
-        TiredExecutor te = new TiredExecutor(1);
-        Runnable task = () -> {};
-        te.submit(task);
-        if(te.getInFlight() != 0){
+    public void testTaskHandover() {
+        // Validation 1: Verify task state changes upon submission
+        TiredExecutor scheduler = new TiredExecutor(1);
+        Runnable dummyTask = () -> { /* simple no-op */ };
+        
+        scheduler.submit(dummyTask);
+        
+        // Logical check: Task must either be currently processing (in-flight) 
+        // or stored in the prioritization structure (min-heap).
+        if (scheduler.getInFlight() != 0) {
             assertTrue(true);
+        } else {
+            assertFalse(scheduler.minHeapIsEmpty(), "Task should be in the idle heap if not in-flight");
         }
-        else{
-            assertFalse(te.minHeapIsEmpty());
+        
+        try { 
+            scheduler.shutdown(); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
-        try{ te.shutdown(); }
-        catch(InterruptedException e) {}
     }
 
     @Test
-    public void testSubmitAll() {
-        //test 1: Submitting multiple tests results in inFlight = 0
-        TiredExecutor te = new TiredExecutor(5);
-        int numTasks = 30;
-        java.util.ArrayList<Runnable> tasks = new java.util.ArrayList<>();
-        for (int i = 0; i < numTasks; i++) {
-            tasks.add(() -> {
-                int num = 0;
-                for (int j = 0; j < 100000000; j++) {
-                    num++;
+    public void testBulkProcessing() {
+        // Validation 1: Verify that bulk submission blocks until all tasks finish (inFlight reaches 0)
+        TiredExecutor core = new TiredExecutor(4);
+        int totalWorkload = 25;
+        java.util.ArrayList<Runnable> workloadList = new java.util.ArrayList<>();
+        
+        for (int k = 0; k < totalWorkload; k++) {
+            workloadList.add(() -> {
+                double result = 0.1;
+                // Simulating a CPU-heavy calculation to ensure concurrency logic is tested
+                for (int m = 0; m < 50_000_000; m++) {
+                    result = Math.sqrt(result + m);
                 }
             });
         }
-        te.submitAll(tasks);
+        
+        // The logic requires submitAll to be a blocking/synchronous call until completion
+        core.submitAll(workloadList);
 
-        assertEquals(0, te.getInFlight());
+        assertEquals(0, core.getInFlight(), "All tasks should have completed before return");
 
-        try { te.shutdown(); } 
-        catch (InterruptedException e) {}
+        try { 
+            core.shutdown(); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     @Test
-    public void testShutdown() {
-        //test 1: All threads = TERMINATED at end
-        TiredExecutor te = new TiredExecutor(8);
-        te.submit(() -> {});
+    public void testLifecycleTermination() {
+        // Validation 1: Ensure all internal worker threads are stopped post-shutdown
+        TiredExecutor pool = new TiredExecutor(10);
+        pool.submit(() -> {
+            try { Thread.sleep(10); } catch (InterruptedException ignored) {}
+        });
         
-        try {te.shutdown(); } 
-        catch (InterruptedException e) {
-            fail("Shutdown was interrupted");
+        try { 
+            pool.shutdown(); 
+        } catch (InterruptedException e) {
+            fail("The shutdown process was prematurely interrupted");
         }
-        for (TiredThread worker : te.getWorkers()) {
-            assertFalse(worker.isAlive());
+        
+        // Verify the status of every individual worker thread
+        for (TiredThread unit : pool.getWorkers()) {
+            assertFalse(unit.isAlive(), "Worker thread should be terminated after shutdown call");
         }
     }
 }

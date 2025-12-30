@@ -4,115 +4,111 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class SharedVectorTest {
-    @Test
-    public void testVectorConstructor() {
-        //test 1: Null array
-        assertThrows(IllegalArgumentException.class, () -> {new SharedVector(null, VectorOrientation.ROW_MAJOR);});
-        //test 2: Null orientation
-        assertThrows(IllegalArgumentException.class, () -> {new SharedVector(new double[]{1.0,2.0}, null);});
-    }
 
     @Test
-    public void testVectorAddition() {
-        //test 1: Successful addition
-        SharedVector vec1 = new SharedVector(new double[]{1.0,2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0}, VectorOrientation.ROW_MAJOR);
-        SharedVector vec2 = new SharedVector(new double[]{1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0}, VectorOrientation.ROW_MAJOR);
-        vec1.add(vec2);
-        double[] expctOutput = {2.0,3.0,4.0,5.0,6.0,7.0,8.0,9.0,10.0,11.0};
-        double[] actOutput = vec1.getVector();
-
-        assertArrayEquals(expctOutput, actOutput);
+    public void testVectorInitialization() {
+        // Validation 1: Rejection of null data arrays
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SharedVector(null, VectorOrientation.ROW_MAJOR);
+        });
         
-        //test 2: Non-matching dimensions
-        SharedVector vec3 = new SharedVector(new double[]{1.0,2.0,3.0,4.0}, VectorOrientation.ROW_MAJOR);
-        SharedVector vec4= new SharedVector(new double[]{1.0,2.0,3.0}, VectorOrientation.ROW_MAJOR);
-
-        assertThrows(IllegalArgumentException.class, () -> {vec3.add(vec4);});
-
-        //test 3: vector + {}
-        SharedVector vec5 = new SharedVector(new double[]{}, VectorOrientation.ROW_MAJOR);
-
-        assertThrows(IllegalArgumentException.class, () -> {vec3.add(vec5);});
-
-        //test 4: Non-matching orientations
-        SharedVector vec6 = new SharedVector(new double[]{3.0,4.0,5.0}, VectorOrientation.COLUMN_MAJOR);
-
-        assertThrows(IllegalArgumentException.class, () -> {vec4.add(vec6);});
-
+        // Validation 2: Rejection of missing orientation metadata
+        assertThrows(IllegalArgumentException.class, () -> {
+            new SharedVector(new double[]{5.5, 6.5}, null);
+        });
     }
 
     @Test
-    public void testVectorVecMatMul() {
-        //test 1: Successful Row Matrix Multiplication
-        SharedVector vec1 = new SharedVector(new double[]{1.0,1.0,1.0}, VectorOrientation.ROW_MAJOR);
-        SharedMatrix mat1 = new SharedMatrix(new double[][]{{2.0,2.0},{1.0,1.0},{5.0,5.0}});
-        vec1.vecMatMul(mat1);
-        double[] expctOutput1 = {8.0,8.0};
-
-        assertArrayEquals(expctOutput1, vec1.getVector());
-
-        //test 2: Successful Column Matrix Multiplication
-        SharedVector vec2 = new SharedVector(new double[]{1.0,1.0,1.0}, VectorOrientation.ROW_MAJOR);
-        SharedMatrix mat2 = new SharedMatrix();
-        mat2.loadColumnMajor(new double[][]{{2.0,2.0},{1.0,1.0},{5.0,5.0}});
-        vec2.vecMatMul(mat2);
-
-        assertArrayEquals(expctOutput1, vec2.getVector());
-
-        //test 3: Non-matching dimensions
-        SharedVector vec3 = new SharedVector(new double[]{1.0,1.0,1.0}, VectorOrientation.ROW_MAJOR);
-        SharedMatrix mat3 = new SharedMatrix(new double[][]{{2.0,2.0},{1.0,1.0}});
-
-        assertThrows(IllegalArgumentException.class, () -> {vec3.vecMatMul(mat3);});
-
-        //test 4: Zero vector * Zero matrix
-        SharedVector vec4 = new SharedVector(new double[]{}, VectorOrientation.ROW_MAJOR);
-        SharedMatrix mat4 = new SharedMatrix();
-        vec4.vecMatMul(mat4);
-
-        assertArrayEquals(new double[]{}, vec4.getVector());
-
-        //test 5: Vector orientation is Column
-        SharedVector vec5 = new SharedVector(new double[]{1.0,2.0}, VectorOrientation.COLUMN_MAJOR);
-        SharedMatrix mat5 = new SharedMatrix(new double[][]{{7.0}});
-
-        assertThrows(IllegalArgumentException.class, () -> {vec5.vecMatMul(mat5);});
-    }
-
-    @Test
-    public void testVectorTranspose() {
-        //test 1: Successful Row -> Column
-        SharedVector vec1 = new SharedVector(new double[]{1.0,2.0,3.0}, VectorOrientation.ROW_MAJOR);
-        vec1.transpose();
-
-        assertEquals(VectorOrientation.COLUMN_MAJOR, vec1.getOrientation());
-
-        //test 2: Succesful Column -> Row
-        SharedVector vec2 = new SharedVector(new double[]{4.0,2.0,4.0}, VectorOrientation.COLUMN_MAJOR);
-        vec2.transpose();
-        assertEquals(VectorOrientation.ROW_MAJOR, vec2.getOrientation());
-
-        //null vector is handled in Constructor.
-    }
-
-    @Test
-    public void testVectorNegate(){
-        //test 1: Successful negate
-        SharedVector vec1 = new SharedVector(new double[]{10.0,5.0,6.0,-9.0}, VectorOrientation.ROW_MAJOR);
-        vec1.negate();
-        double[] expctOutput = {-10.0,-5.0,-6.0,9.0};
+    public void testElementWiseAddition() {
+        // Validation 1: Successful vector sum
+        SharedVector alpha = new SharedVector(new double[]{0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0}, VectorOrientation.ROW_MAJOR);
+        SharedVector beta = new SharedVector(new double[]{2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0}, VectorOrientation.ROW_MAJOR);
+        alpha.add(beta);
         
-        assertArrayEquals(expctOutput, vec1.getVector());
+        double[] expectedResult = {2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0};
+        assertArrayEquals(expectedResult, alpha.getVector());
 
-        //null vector is handled in Constructor.
+        // Validation 2: Size mismatch check
+        SharedVector gamma = new SharedVector(new double[]{10.0, 20.0}, VectorOrientation.ROW_MAJOR);
+        SharedVector delta = new SharedVector(new double[]{10.0, 20.0, 30.0}, VectorOrientation.ROW_MAJOR);
+        assertThrows(IllegalArgumentException.class, () -> { gamma.add(delta); });
+
+        // Validation 3: Handling empty vector addition
+        SharedVector emptyVec = new SharedVector(new double[]{}, VectorOrientation.ROW_MAJOR);
+        assertThrows(IllegalArgumentException.class, () -> { gamma.add(emptyVec); });
+
+        // Validation 4: Orientation mismatch check
+        SharedVector verticalVec = new SharedVector(new double[]{10.0, 20.0}, VectorOrientation.COLUMN_MAJOR);
+        assertThrows(IllegalArgumentException.class, () -> { gamma.add(verticalVec); });
     }
 
     @Test
-    public void testVectorGet() {
-        SharedVector vec1 = new SharedVector(new double[]{1.0,2.0}, VectorOrientation.ROW_MAJOR);
-        //test 1: Index out of bounds (Too large)
-        assertThrows(IndexOutOfBoundsException.class, () -> {vec1.get(10);});
-        //test 2: Index out of bounds (Negative)
-        assertThrows(IndexOutOfBoundsException.class, () -> {vec1.get(-1);});
+    public void testLinearTransformation() {
+        // Validation 1: Row Vector by Matrix multiplication
+        SharedVector baseVector = new SharedVector(new double[]{2.0, 2.0, 2.0}, VectorOrientation.ROW_MAJOR);
+        SharedMatrix transformMat = new SharedMatrix(new double[][]{{1.0, 1.0}, {2.0, 2.0}, {3.0, 3.0}});
+        baseVector.vecMatMul(transformMat);
+        
+        // Calculation: [2*1 + 2*2 + 2*3, 2*1 + 2*2 + 2*3] = [12, 12]
+        double[] targetOutput = {12.0, 12.0};
+        assertArrayEquals(targetOutput, baseVector.getVector());
+
+        // Validation 2: Vector multiplication with Column-Major Matrix
+        SharedVector secondaryVector = new SharedVector(new double[]{2.0, 2.0, 2.0}, VectorOrientation.ROW_MAJOR);
+        SharedMatrix colMatrix = new SharedMatrix();
+        colMatrix.loadColumnMajor(new double[][]{{1.0, 1.0}, {2.0, 2.0}, {3.0, 3.0}});
+        secondaryVector.vecMatMul(colMatrix);
+
+        assertArrayEquals(targetOutput, secondaryVector.getVector());
+
+        // Validation 3: Dimensionality constraint check
+        SharedVector mismatchVec = new SharedVector(new double[]{1.0, 1.0}, VectorOrientation.ROW_MAJOR);
+        SharedMatrix tooLargeMat = new SharedMatrix(new double[][]{{1.0}, {1.0}, {1.0}});
+        assertThrows(IllegalArgumentException.class, () -> { mismatchVec.vecMatMul(tooLargeMat); });
+
+        // Validation 4: Identity case - Empty structures
+        SharedVector nullVec = new SharedVector(new double[]{}, VectorOrientation.ROW_MAJOR);
+        SharedMatrix nullMat = new SharedMatrix();
+        nullVec.vecMatMul(nullMat);
+        assertArrayEquals(new double[]{}, nullVec.getVector());
+
+        // Validation 5: Verify only Row Vectors can initiate multiplication
+        SharedVector invalidOrientVec = new SharedVector(new double[]{1.0, 1.0}, VectorOrientation.COLUMN_MAJOR);
+        SharedMatrix simpleMat = new SharedMatrix(new double[][]{{5.0}});
+        assertThrows(IllegalArgumentException.class, () -> { invalidOrientVec.vecMatMul(simpleMat); });
+    }
+
+    @Test
+    public void testOrientationFlip() {
+        // Validation 1: Change Row to Column
+        SharedVector pivotVec = new SharedVector(new double[]{10.0, 20.0, 30.0}, VectorOrientation.ROW_MAJOR);
+        pivotVec.transpose();
+        assertEquals(VectorOrientation.COLUMN_MAJOR, pivotVec.getOrientation());
+
+        // Validation 2: Change Column to Row
+        SharedVector resetVec = new SharedVector(new double[]{0.1, 0.2}, VectorOrientation.COLUMN_MAJOR);
+        resetVec.transpose();
+        assertEquals(VectorOrientation.ROW_MAJOR, resetVec.getOrientation());
+    }
+
+    @Test
+    public void testValueInversion() {
+        // Validation 1: Sign flipping for all elements
+        SharedVector source = new SharedVector(new double[]{-1.5, 3.0, 0.0, -10.5}, VectorOrientation.ROW_MAJOR);
+        source.negate();
+        double[] expectedValues = {1.5, -3.0, -0.0, 10.5};
+        
+        assertArrayEquals(expectedValues, source.getVector());
+    }
+
+    @Test
+    public void testBoundaryChecks() {
+        SharedVector probe = new SharedVector(new double[]{7.0, 8.0, 9.0}, VectorOrientation.ROW_MAJOR);
+        
+        // Validation 1: High-end bounds overflow
+        assertThrows(IndexOutOfBoundsException.class, () -> { probe.get(100); });
+        
+        // Validation 2: Low-end bounds underflow
+        assertThrows(IndexOutOfBoundsException.class, () -> { probe.get(-5); });
     }
 }
